@@ -1,11 +1,11 @@
-"
-""  插件列表
-""
+"" 插件列表
 call plug#begin()
 ""  补全插件
 " Plug 'neoclide/coc.nvim', {'branch': 'release'}
 ""  主题插件
-Plug 'ful1e5/onedark.nvim'
+" Plug 'ful1e5/onedark.nvim'
+" Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
+Plug 'rebelot/kanagawa.nvim'
 ""  状态栏插件
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
@@ -30,7 +30,6 @@ Plug 'easymotion/vim-easymotion'
 Plug 'phaazon/hop.nvim'
 "" 代码高亮
 Plug 'nvim-treesitter/nvim-treesitter'
-"" Plug 'nvim-lua/plenary.nvim'
 "" 模糊搜索
 Plug 'nvim-telescope/telescope.nvim'
 "" 启动页
@@ -67,6 +66,22 @@ Plug 'kdheepak/lazygit.nvim'
 ""图片显示插件
 Plug 'samodostal/image.nvim'
 Plug 'm00qek/baleia.nvim', { 'tag': 'v1.2.0' }
+Plug 'tpope/vim-fugitive'
+""颜色显示
+Plug 'norcalli/nvim-colorizer.lua'
+""快速选择文本
+Plug 'terryma/vim-expand-region'
+""拆分
+Plug 'AndrewRadev/splitjoin.vim'
+""移动行数
+Plug 'matze/vim-move'
+""函数参数显示
+Plug 'ray-x/lsp_signature.nvim'
+""lsp进度
+Plug 'j-hui/fidget.nvim'
+""优化nvim启动速度
+Plug 'lewis6991/impatient.nvim'
+Plug 'APZelos/blamer.nvim'
 call plug#end()
 
 ""
@@ -95,22 +110,38 @@ nmap <C-j> 4j<CR>
 nmap <C-k> 4k<CR>
 imap <C-h> <ESC>I
 imap <C-l> <ESC>A
+""窗口移动
+nmap <space>h <C-w>h
+nmap <space>j <C-w>j
+nmap <space>k <C-w>k
+nmap <space>l <C-w>l
+""分屏快捷键
+nmap sv :vsp<CR>
+nmap sh :sp<CR>
+""终端
+
 ""向下移动一行
-nmap <space>n :m -2<CR>
+nmap <A-n> :m -2<CR>
 ""向上移动一行
-nmap <space>m :m +1<CR>
+nmap <A-m> :m +1<CR>
 ""设置切换Buffer快捷键"
 nnoremap <TAB> :bn<CR>
 nnoremap <leader>c :bd<CR>
 ""终端
 ""打开或关闭所有终端
 nnoremap <C-a> :ToggleTermToggleAll<CR> 
+""拆分快捷键设置
+let g:splitjoin_split_mapping = ''
+let g:splitjoin_join_mapping = ''
+imap <C-1> <ESC>:SplitjoinJoin<cr>i
+imap <C-2> <ESC>:SplitjoinSplit<cr>i
 ""rust
 let g:rustfmt_autosave = 1
 ""缩进线Yggdrootp/indentline
 let g:indentLine_fileTypeExclude = ['dashboard']
 let g:indentLine_char_list = ['¦']
 
+let g:blamer_enabled = 1
 
 ""快捷键配置
 ""neo-tree文件树
@@ -122,7 +153,9 @@ noremap <leader>g :Neotree git_status<CR>
 ""
 let g:everforest_better_performance = 1
 ""colorscheme everforest
-colorscheme onedark
+" colorscheme onedark
+" colorscheme catppuccin-frappe
+colorscheme kanagawa
 ""let g:everforest_background = 'soft'
 let g:rehash256 = 1
 let g:molokai_original = 1
@@ -145,7 +178,89 @@ let s:baleia = luaeval("require('baleia').setup { }")
 autocmd BufWinEnter my-buffer call s:baleia.automatically(bufnr('%'))
 let g:conjure#log#strip_ansi_escape_sequences_line_limit = 0
 
+
+
 lua << EOF
+
+local opts = { noremap=true, silent=true }
+
+--优化启动速度
+_G.__luacache_config = {
+  chunks = {
+    enable = true,
+    path = vim.fn.stdpath('cache')..'/luacache_chunks',
+  },
+  modpaths = {
+    enable = true,
+    path = vim.fn.stdpath('cache')..'/luacache_modpaths',
+  }
+}
+require('impatient')
+
+require"fidget".setup{}
+
+local cfg = {
+debug = false, -- set to true to enable debug logging
+  log_path = vim.fn.stdpath("cache") .. "/lsp_signature.log", -- log dir when debug is on
+  -- default is  ~/.cache/nvim/lsp_signature.log
+  verbose = false, -- show debug line number
+
+  bind = true, -- This is mandatory, otherwise border config won't get registered.
+               -- If you want to hook lspsaga or other signature handler, pls set to false
+  doc_lines = 10, -- will show two lines of comment/doc(if there are more than two lines in doc, will be truncated);
+                 -- set to 0 if you DO NOT want any API comments be shown
+                 -- This setting only take effect in insert mode, it does not affect signature help in normal
+                 -- mode, 10 by default
+
+  max_height = 12, -- max height of signature floating_window
+  max_width = 80, -- max_width of signature floating_window
+  noice = false, -- set to true if you using noice to render markdown
+  wrap = true, -- allow doc/signature text wrap inside floating_window, useful if your lsp return doc/sig is too long
+  
+  floating_window = true, -- show hint in a floating window, set to false for virtual text only mode
+
+  floating_window_above_cur_line = true, -- try to place the floating above the current line when possible Note:
+  -- will set to true when fully tested, set to false will use whichever side has more space
+  -- this setting will be helpful if you do not want the PUM and floating win overlap
+
+  floating_window_off_x = 1, -- adjust float windows x position.
+  floating_window_off_y = 0, -- adjust float windows y position. e.g -2 move window up 2 lines; 2 move down 2 lines
+                              -- can be either number or function, see examples
+
+  close_timeout = 4000, -- close floating window after ms when laster parameter is entered
+  fix_pos = false,  -- set to true, the floating window will not auto-close until finish all parameters
+  hint_enable = true, -- virtual hint enable
+  hint_prefix = "🐼 ",  -- Panda for parameter, NOTE: for the terminal not support emoji, might crash
+  hint_scheme = "String",
+  hi_parameter = "LspSignatureActiveParameter", -- how your parameter will be highlight
+  handler_opts = {
+    border = "rounded"   -- double, rounded, single, shadow, none, or a table of borders
+  },
+
+  always_trigger = false, -- sometime show signature on new line or in middle of parameter can be confusing, set it to false for #58
+
+  auto_close_after = nil, -- autoclose signature float win after x sec, disabled if nil.
+  extra_trigger_chars = {}, -- Array of extra characters that will trigger signature completion, e.g., {"(", ","}
+  zindex = 200, -- by default it will be on top of all floating windows, set to <= 50 send it to bottom
+
+  padding = '', -- character to pad on left and right of signature can be ' ', or '|'  etc
+
+  transparency = nil, -- disabled by default, allow floating win transparent value 1~100
+  shadow_blend = 36, -- if you using shadow as border use this set the opacity
+  shadow_guibg = 'Black', -- if you using shadow as border use this set the color e.g. 'Green' or '#121315'
+  timer_interval = 200, -- default timer check interval set to lower value if you want to reduce latency
+  toggle_key = nil, -- toggle signature on and off in insert mode,  e.g. toggle_key = '<M-x>'
+
+  select_signature_key = nil, -- cycle to next signature, e.g. '<M-n>' function overloading
+  move_cursor_key = nil, -- imap, use nvim_set_current_win to move cursor between current win and floating
+} 
+
+require "lsp_signature".setup(cfg)
+
+
+-- 颜色显示
+require'colorizer'.setup()
+
 -- 依赖ascii-image-converter
 require('image').setup {
   render = {
@@ -153,7 +268,7 @@ require('image').setup {
     show_label = true,
     use_dither = true,
     foreground_color = true,
-    background_color = true
+		background_color = true
   },
   events = {
     update_on_nvim_resize = true,
@@ -173,7 +288,6 @@ require'nvim-treesitter.configs'.setup {
 }
 
 --nvim-lsp
-local opts = { noremap=true, silent=true }
 vim.keymap.set('n', '<space>e', vim.diagnostic.open_float, opts)
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, opts)
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, opts)
@@ -209,7 +323,7 @@ local lsp_flags = {
   debounce_text_changes = 150,
 }
 local lspconfig = require('lspconfig')
-local servers = {'rust_analyzer','tsserver','sumneko_lua','jdtls','vimls','volar','jsonls','emmet_ls','zk','clanged','sqlls','gopls','html','cssls' }
+local servers = {'rust_analyzer','tsserver','sumneko_lua','jdtls','vimls','volar','jsonls','emmet_ls','zk','sqlls','gopls','html','cssls' }
 for _, lsp in ipairs(servers) do
   lspconfig[lsp].setup {
     on_attach = on_attach,
@@ -243,7 +357,9 @@ end
     sources = cmp.config.sources({
       { name = 'nvim_lsp' },
       { name = 'vsnip' }, -- For vsnip users.
-    }, {
+			{ name = 'path' },
+    }, 
+		{
       { name = 'buffer' },
     })
   })
@@ -332,7 +448,7 @@ end
           -- and is not recommended.
           --
           -- Example: { "--proxy", "https://proxyserver" }
-          install_args = {"proxy","https://proxyserver"},
+          install_args = {},
       },
 
       -- Controls to which degree logs are written to the log file. It's useful to set this to vim.log.levels.DEBUG when
@@ -370,6 +486,7 @@ require('mason-lspconfig').setup({
 				"cssls", -- css
 				},
 })
+
 
 local opts = { noremap=true, silent=true }
 vim.keymap.set('n', '<space>e', vim.diagnostic.open_float, opts)
@@ -477,8 +594,11 @@ treesitter.setup({
   -- 启用代码高亮模块
   highlight = {
     enable = true,
-    additional_vim_regex_highlighting = false,
+    additional_vim_regex_highlighting = true,
   },
+	indent = {
+				enable = true,
+			},
 })
 --模糊搜索
 local status, telescope = pcall(require, "telescope")
@@ -502,9 +622,8 @@ telescope.setup({
   },
   extensions = {
      -- 扩展插件配置
-  },
+				},
 })
-
 EOF
 
 " Find files using Telescope command-line sugar.
@@ -663,7 +782,7 @@ nvim_tree.setup({
             -- 首次打开大小适配
             resize_window = true,
             -- 打开文件时关闭
-            quit_on_open = true,
+            quit_on_open = false,
         },
     },
     system_open = {
@@ -688,11 +807,11 @@ end
 vim.g.nvim_tree_respect_buf_cwd = 1
 
 project.setup({
-  detection_methods = { "pattern" },
+  detection_methods = { "pattern","lsp" },
   patterns = { ".git", "_darcs", ".hg", ".bzr", ".svn", "Makefile", "package.json", ".sln",".md",".vim"},
-  datapath = vim.fn.stdpath("data"),
   sync_root_with_cwd = true,
   respect_buf_cwd = true,
+	show_hidden = true,
   silent_chdir = false,
 })
 
@@ -728,11 +847,6 @@ db.custom_center = {
     icon = "  ",
     desc = "Recently files						",
     action = "Telescope oldfiles",
-  },
-  {
-    icon = "  ",
-    desc = "Edit Projects							",
-    action = "edit ~/.local/share/nvim/project_nvim/project_history",
   },
   {
     icon = "  ",
@@ -802,7 +916,7 @@ db.custom_header = {
 }
 
  -- local home = os.getenv('HOME')
- --  db.preview_command = 'cat | lolcat -F 0.3'
+  -- db.preview_command = 'cat | lolcat -F 0.3'
  -- db.preview_file_path =  home .. '/.config/nvim/neovim.cat'
  --  db.preview_file_height = 21
  --  db.preview_file_width = 70
