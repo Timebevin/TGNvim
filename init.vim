@@ -3,8 +3,6 @@ call plug#begin()
 ""  补全插件
 " Plug 'neoclide/coc.nvim', {'branch': 'release'}
 ""  主题插件
-" Plug 'ful1e5/onedark.nvim'
-" Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
 Plug 'rebelot/kanagawa.nvim'
 ""  状态栏插件
 Plug 'vim-airline/vim-airline'
@@ -81,7 +79,10 @@ Plug 'ray-x/lsp_signature.nvim'
 Plug 'j-hui/fidget.nvim'
 ""优化nvim启动速度
 Plug 'lewis6991/impatient.nvim'
+""git 提交信息显示
 Plug 'APZelos/blamer.nvim'
+""markdown预览
+Plug 'iamcco/markdown-preview.nvim'
 call plug#end()
 
 ""
@@ -92,7 +93,7 @@ set encoding=UTF-8
 set signcolumn=number
 "" 将tab扩展成空格
 set ts=2
-set shiftwidth=4
+set shiftwidth=2
 set backspace=2    " more powerful backspacing
 set wrap
 set timeoutlen=500
@@ -102,6 +103,7 @@ set pumheight=10
 set wildmenu
 "" 搜索不高亮
 set nohlsearch
+set completeopt
 ""leaders键配置
 let mapleader=","
 nmap q :q<CR>
@@ -140,25 +142,15 @@ let g:rustfmt_autosave = 1
 ""缩进线Yggdrootp/indentline
 let g:indentLine_fileTypeExclude = ['dashboard']
 let g:indentLine_char_list = ['¦']
-
+""git提交信息显示
 let g:blamer_enabled = 1
+let g:blamer_delay = 500
+""markdown
+let g:mkdp_auto_start = 0
 
-""快捷键配置
-""neo-tree文件树
-""noremap <leader>m :Neotree<CR>
-noremap <leader>g :Neotree git_status<CR>
-
-""
 ""  主题
 ""
-let g:everforest_better_performance = 1
-""colorscheme everforest
-" colorscheme onedark
-" colorscheme catppuccin-frappe
 colorscheme kanagawa
-""let g:everforest_background = 'soft'
-let g:rehash256 = 1
-let g:molokai_original = 1
 
 ""git插件设置
 " setup mapping to call :LazyGit
@@ -323,7 +315,7 @@ local lsp_flags = {
   debounce_text_changes = 150,
 }
 local lspconfig = require('lspconfig')
-local servers = {'rust_analyzer','tsserver','sumneko_lua','jdtls','vimls','volar','jsonls','emmet_ls','zk','sqlls','gopls','html','cssls' }
+local servers = {'rust_analyzer','tsserver','sumneko_lua','jdtls','vimls','volar','jsonls','emmet_ls','sqlls','gopls','html','cssls',"prosemd_lsp" }
 for _, lsp in ipairs(servers) do
   lspconfig[lsp].setup {
     on_attach = on_attach,
@@ -479,14 +471,13 @@ require('mason-lspconfig').setup({
 				"jsonls", -- json
 				"emmet_ls", --emmet
 				"clangd", -- c++ c
-				"zk", -- markdown
+				"prosemd_lsp", -- markdown
 				"sqlls", -- sql
 				"gopls", -- go
 				"html", -- html
 				"cssls", -- css
 				},
 })
-
 
 local opts = { noremap=true, silent=true }
 vim.keymap.set('n', '<space>e', vim.diagnostic.open_float, opts)
@@ -519,8 +510,6 @@ local on_attach = function(client, bufnr)
   vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
   vim.keymap.set('n', '<space>f', function() vim.lsp.buf.format { async = true } end, bufopts)
 end
-
-
 
 --lsp增强
 
@@ -578,7 +567,6 @@ keymap("n", "<A-d>", "<cmd>Lspsaga open_floaterm<CR>", { silent = true })
 keymap("n", "<A-d>", "<cmd>Lspsaga open_floaterm lazygit<CR>", { silent = true })
 -- close floaterm
 keymap("t", "<A-d>", [[<C-\><C-n><cmd>Lspsaga close_floaterm<CR>]], { silent = true })
-
 
 --代码高亮
 local status, treesitter = pcall(require, "nvim-treesitter.configs")
@@ -681,7 +669,7 @@ lua require("toggleterm").setup{
             \ }
 ""  vim-choosewin基础配置
 nmap - <Plug>(choosewin)
-"" vim-visual-multi配置
+
 noremap <silent>gdi :Gdiffsplit<CR>
 noremap <silent>gvs :Gvsplit<CR>
 ""
@@ -807,7 +795,7 @@ end
 vim.g.nvim_tree_respect_buf_cwd = 1
 
 project.setup({
-  detection_methods = { "pattern","lsp" },
+  detection_methods = { "pattern" },
   patterns = { ".git", "_darcs", ".hg", ".bzr", ".svn", "Makefile", "package.json", ".sln",".md",".vim"},
   sync_root_with_cwd = true,
   respect_buf_cwd = true,
@@ -833,9 +821,7 @@ if not status then
   return
 end
 
-db.custom_footer = {
-  "                   ",
-}
+db.custom_footer = {""}
 
 db.custom_center = {
   {
@@ -850,7 +836,7 @@ db.custom_center = {
   },
   {
     icon = "  ",
-    desc = "Edit nvim config					",
+    desc = "Edit nvim config				",
     action = "edit /Users/tg/.config/nvim/init.vim",
   },
   {
@@ -887,38 +873,5 @@ db.custom_header = {
   [[]],
   [[]],
 }
-
-db.custom_header = {
-  [[⢕⢕⢕⢕⢕⢕⢕⢕⢕⢕⢕⠕⠕⡑⡡⡡⡕⡜⡔⡕⡕⡕⢕⢕⢕⢕⢱⢑⢎⢦⢲⢨⢢⢢⢪⢬⣘⡘⡘⠪⠪⢮⢲⡡⣃⠳⡱⡕⣕⢕⢇⢗⢕⢇⢗⢕⢇⢗⡕⣇⢗⢵⢹⢜⢮⡪]],
-  [[⢕⢕⢝⢌⢎⢎⢎⠎⠎⡅⡆⡮⡺⡸⡱⡑⡅⡕⡔⡕⡕⡍⡎⡪⡪⡪⡪⢪⢪⢪⢪⡪⡣⡣⡇⡗⡆⡏⡮⡫⣚⡲⡢⡬⣊⠳⡸⣘⠜⡜⡜⡜⡬⡪⠮⡌⢇⢇⢇⢇⢗⢕⢧⢳⡱⡕]],
-  [[⢕⢕⢕⢕⠕⡃⡕⡜⡕⡕⡕⡕⡕⡕⢕⢕⢕⢕⢜⠜⡜⡜⡜⡜⡜⠜⠜⠈⢈⠨⢐⠀⡐⡐⢈⠠⠑⢉⠊⡚⠜⡜⡎⡮⡪⡪⡒⢬⢑⠪⣘⠸⡌⡎⡇⣇⠪⡣⡫⣪⢣⡳⡱⡕⣕⠭]],
-  [[⢕⢕⢕⠅⡎⡎⢜⢌⠎⢎⢎⢎⢎⢎⢎⢎⢎⢎⢎⢪⢜⡸⠘⡈⢀⠂⠀⠅⡰⢨⠂⠄⡢⡊⢆⠐⢈⠄⢂⠐⡀⢂⠑⠱⢹⢘⢌⢇⢇⢗⠦⡅⡂⣝⢜⡒⡸⡸⡪⣪⢪⢎⢞⡜⣜⢎]],
-  [[⢕⢕⢅⠪⣒⢸⢨⠢⣑⢑⠜⡌⢆⢣⢪⢢⢣⢣⠣⡣⠃⢀⠁⠠⠀⠄⠡⣘⢜⠬⠐⡨⡪⡪⡂⡆⢐⠨⠀⡂⠐⠠⠈⡈⠄⠅⠣⡣⡣⡣⡓⡜⡜⡤⡑⠕⡜⡎⣎⢎⢮⢪⡣⡣⡇⡗]],
-  [[⢕⢕⢕⠸⡰⡱⡑⡕⡌⣆⢳⠸⡐⡕⡅⡇⡕⡕⠑⠁⠠⠀⠂⠄⠡⠈⡜⡔⡕⡕⠀⡇⡇⡧⡳⡨⡀⡂⡁⠐⡈⠄⠡⢐⠀⠅⡁⠌⢺⢸⢸⢸⡸⢸⢘⢲⢨⠪⡪⣪⢪⢎⢎⢮⢺⢸]],
-  [[⢕⠕⡕⡌⢪⠢⡣⢃⢇⠎⡆⡇⡇⢇⢕⠕⠑⠈⡀⠡⠀⠅⠨⠀⠌⡸⡸⡸⡸⡌⢂⢇⢇⢇⢇⢇⢇⠠⠀⠅⠄⡁⡪⠐⢀⠁⠄⠈⠄⡑⡕⡱⣘⢢⢱⢡⢣⢣⡘⢜⢜⢜⢎⢮⢪⢎]],
-  [[⡊⡎⡎⡎⢆⠱⡨⡐⢅⢣⢊⠆⡣⢣⠣⡢⠬⡰⢀⠂⠂⡁⠐⡈⠠⠪⠪⠪⡪⡪⡠⡣⡣⡣⡳⡱⡱⡈⡐⢸⡀⡢⡣⡃⠄⠠⠁⠌⡀⠄⠪⡪⡢⡣⢕⢕⠕⡕⡅⢇⠱⡣⡳⡱⡱⡕]],
-  [[⢸⢨⠪⡪⡪⢌⠢⡃⡇⢆⢣⢱⢑⠕⡕⡜⡜⠈⡀⠄⢁⠀⠂⠬⡐⡕⡕⡕⡆⡎⡢⡣⡣⡣⡣⡣⡫⡢⢂⢕⢕⢕⢕⢕⠈⠠⠈⠄⠠⢀⠁⢇⢇⢣⠣⡱⠱⡑⢜⠌⣎⠸⡸⡸⡸⡸]],
-  [[⡱⡑⡕⢕⢕⢕⠥⡑⢜⠜⡨⢊⢢⢑⠱⠈⡀⢄⠄⠂⠠⢀⠡⡱⡱⠱⢱⠱⡱⡱⡱⡱⡱⡱⡱⡱⡱⡱⡨⠬⡌⡌⡊⢎⠄⠌⡀⠌⠀⠂⡈⢜⠌⡔⠅⡇⢕⢝⠄⡮⢂⢳⠘⡜⡕⡭]],
-  [[⢜⢌⢎⢎⢆⢇⢣⢕⠤⡑⢔⠡⡱⡡⡣⠣⡊⡂⠆⠅⠂⢸⢐⢅⢔⢔⢔⢄⠂⢕⢜⢜⠌⡎⡎⡎⡎⡎⡎⡇⡇⡇⡏⡆⢄⠢⠀⢐⠀⡁⠠⠈⡸⡨⡃⢎⢎⠪⢰⢱⢐⢕⠱⡈⡎⡎]],
-  [[⢪⠢⡣⢪⠢⡣⢣⢱⢑⢕⠤⡑⢜⠔⢅⠣⠂⠥⡁⡅⠅⢜⢜⢜⢸⢘⢜⢜⢸⢰⠱⡑⢨⢪⢪⠪⡪⠊⠌⠘⠸⢸⢸⢘⢜⠌⡀⠂⠐⢀⠀⠂⡘⢬⠂⡣⡱⢁⢇⢕⠰⡨⡊⢆⢜⠜]],
-  [[⢪⢊⢎⢪⠪⡊⡎⡪⡊⡎⡪⡪⡢⢌⠢⢑⢅⠕⠐⠄⡃⠕⢑⠘⠌⠎⡎⡪⡊⡎⡪⢂⢕⢱⢡⢓⢔⠎⡎⡝⡔⣄⠱⡱⡑⡅⡂⠀⡁⠐⡄⡅⢨⢪⠂⡪⡨⠠⡣⡣⢨⢢⠣⡑⡐⡡]],
-  [[⢸⠰⡡⢣⠱⡑⡕⡅⢇⢕⢕⠜⡌⡎⢎⢲⢈⢄⠡⡡⡂⠅⢕⠕⡕⢕⢔⠬⡨⣘⢘⠔⠅⢇⢕⢕⢱⢑⢥⢨⠬⢄⢇⢣⢣⠃⢠⠐⡄⢀⢢⠢⢨⢨⠂⡕⢜⠨⢌⠆⡊⠆⡇⢁⢔⠕]],
-  [[⢸⠨⡊⢎⠪⡊⡆⡣⡣⡱⡸⡘⡌⡎⡪⡊⡆⢇⢕⠤⡡⠨⢐⢌⢊⠪⡢⢣⢣⠪⡢⡣⡣⡱⡰⡰⡡⡡⡡⣁⠃⡃⢱⢑⢁⢈⠄⡂⠕⠢⡐⠕⢐⠕⡅⠌⡆⠡⡣⡃⠌⡊⡀⡪⡊⢔]],
-  [[⢸⠨⡊⡎⡪⢪⢘⢌⢆⢣⢊⢎⢜⠌⠎⠜⠌⠎⡆⡣⢣⢃⠂⢕⠅⡇⢕⢱⠰⡑⡕⡸⠰⡱⡸⢰⠱⡸⡨⡢⢣⠃⡌⠔⢀⢢⢑⢐⢑⢅⠣⡑⢐⠕⠅⡘⡠⡑⡜⠄⡊⡐⢔⠬⢐⢕]],
-  [[⡘⡌⡪⢢⠱⡡⢣⠱⡘⠌⢂⢅⠢⡢⡒⡜⢔⢱⢠⢑⠑⠅⢇⠠⠑⢅⢇⢕⢱⢑⢜⢌⢕⠕⡜⢔⢱⢨⢢⢡⠅⡑⡠⡠⢑⠡⢂⢑⠌⠔⡑⠈⡰⡑⡕⡱⡘⡌⡎⡪⡐⡌⡎⠢⠱⠑]],
-  [[⢌⠆⡕⢅⠣⡊⠆⡡⢐⢌⠪⡢⢣⠱⡘⡌⢎⢢⠱⡑⠍⡊⡂⢐⢈⠐⠄⡕⡈⠢⠃⢎⠢⡣⡪⡊⢎⠢⢃⠅⡂⡔⢔⠌⡆⡣⡒⡢⡪⢪⠘⡠⡊⢜⢈⠌⡊⠊⡜⡌⢎⢪⢸⢨⢢⠣]],
-  [[⢢⠱⡘⢔⠑⡡⡁⠢⡡⡑⢕⠜⡌⡪⢪⠘⢌⠐⡐⠌⡂⡂⡂⢔⠐⢄⠡⠀⠣⢱⢘⢔⠰⠰⠐⠅⡑⢨⢐⡈⡂⢆⢢⢡⠑⢜⢌⢪⠨⢊⠔⡕⢌⠒⡐⠅⡌⡢⢈⠸⡨⢪⢂⠇⡎⢠]],
-  [[⠢⡱⠈⡔⢌⠢⠐⢄⠑⡜⢔⢑⢕⠸⡨⡈⢀⠢⡈⣂⠢⢂⢠⢑⠥⡡⢂⠌⡐⡐⠄⢂⠄⡡⠡⠨⠀⢌⠂⠇⠢⡡⡑⠜⡈⢔⠔⢔⢔⠢⡣⠪⡊⡆⡑⠅⡪⢢⢂⠅⡌⠢⡣⠱⡀⢇]],
-  [[⠑⡠⠑⢌⠢⡡⡑⡐⡐⠨⡊⡢⡑⢕⢌⡂⠠⡁⠂⢄⠆⡕⢌⢆⠣⡊⢆⢕⠐⡄⢕⢐⢌⠢⡃⠇⠨⢂⠅⡡⠁⢜⠌⡆⡌⣐⠑⡅⡢⡃⢎⢕⠱⡘⡄⡁⢇⠕⡅⡣⡊⡢⡱⢁⢪⠢]],
-  [[⠨⡐⡡⡡⠱⡨⡊⡌⡪⡂⡊⡢⡑⢕⢔⠸⡀⢂⠕⢅⠣⡪⡨⠢⡣⡑⢕⢔⠱⡘⢔⠱⡘⡌⡪⡑⡅⠄⡁⡂⡨⠢⡃⡎⢜⡐⡅⠌⡢⡑⢕⢌⢪⠸⡰⠠⡑⢕⢌⢆⢣⠱⡈⡢⡑⢕]],
-  [[⠰⡐⡐⡄⠅⡂⠌⠂⠒⠌⠢⠈⠜⡐⢌⢊⡂⢌⠪⡘⢌⠢⡊⡪⡂⢎⢢⢑⢅⠣⡑⡅⡣⡊⡢⡱⠨⡂⠄⢔⠸⡘⡌⢜⠔⡔⢌⠪⢀⠣⢱⠨⡢⠣⡊⢎⠪⡊⡢⡊⢢⠱⢐⢌⠪⡢]],
-  [[⠨⡂⢕⠨⡨⢂⠢⡁⠅⡅⢌⠠⡨⠰⠈⢆⠪⢀⠃⠎⠜⢌⢊⠢⡊⢆⠕⠔⡅⢕⢑⠌⢆⠪⡂⢎⠕⢀⠎⢜⢌⠒⠜⡐⡁⡂⡂⡌⡐⡀⡂⢑⠘⠌⡪⠪⡘⢌⠆⡕⢔⢁⠪⢢⠱⡨]],
-}
-
- -- local home = os.getenv('HOME')
-  -- db.preview_command = 'cat | lolcat -F 0.3'
- -- db.preview_file_path =  home .. '/.config/nvim/neovim.cat'
- --  db.preview_file_height = 21
- --  db.preview_file_width = 70
 
 EOF
